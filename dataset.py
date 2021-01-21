@@ -37,5 +37,5 @@ def load_celeba(which):
         return test_paths
 
 
-paths = load_celeba('test')
-print(len(paths))
+# paths = load_celeba('test')
+# print(len(paths))

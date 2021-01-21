@@ -9,22 +9,35 @@ import random
 import time
 import cv2
 
-Height = 256
-Width = 256
+from dataset import load_celeba
+
+
+Height = 128
+Width = 128
+# Height = 96
+# Width = 96
+# Height = 278
+# Width = 178
 batch_size = 8
 mask_size = 128
 
-dPath_l = ('./List')
+# dPath_l = ('./List')
 
-dPath_train = ('/train_fh256.txt')
-dPath_test = ('/test_fh256.txt')
-dPath_testm = ('/test_mask256.txt')
-dPath_testf = ('/test_maskff.txt')
+# dPath_train = ('/train_fh256.txt')
+# dPath_test = ('/test_fh256.txt')
+# dPath_testm = ('/test_mask256.txt')
+# dPath_testf = ('/test_maskff.txt')
 
-name_f, num_f = ri.read_labeled_image_list(dPath_l + dPath_train)
-name_test, num_test = ri.read_labeled_image_list(dPath_l + dPath_test)
-name_testf, num_testf = ri.read_labeled_image_list(dPath_l + dPath_testf)
-name_tests, num_tests, xst, yst = ri.read_labeled_image_list2(dPath_l + dPath_testm)
+name_f = load_celeba('train')
+num_f = len(name_f)
+
+print(f'{num_f} images found in train dataset.')
+
+# exit()
+# name_f, num_f = ri.read_labeled_image_list(dPath_l + dPath_train)
+# name_test, num_test = ri.read_labeled_image_list(dPath_l + dPath_test)
+# name_testf, num_testf = ri.read_labeled_image_list(dPath_l + dPath_testf)
+# name_tests, num_tests, xst, yst = ri.read_labeled_image_list2(dPath_l + dPath_testm)
 total_batch = int(num_f / batch_size)
 
 save_path = './validation/v1'
@@ -57,8 +70,8 @@ vec_en = mm.encoder(input, reuse=False, name='G_en')
 
 vec_con = mm.contextual_block(vec_en, vec_en, MASK, 3, 50.0, 'CB1', stride=1)
 
-I_co = mm.decoder(vec_en, Height, reuse=False, name='G_de')
-I_ge = mm.decoder(vec_con, Height, reuse=True, name='G_de')
+I_co = mm.decoder(vec_en, Width, Height, reuse=False, name='G_de')
+I_ge = mm.decoder(vec_con, Width, Height, reuse=True, name='G_de')
 
 image_result = I_ge * (1-MASK) + Y*MASK
 
@@ -121,6 +134,7 @@ if restore == True:
 
 start_time = time.time()
 for iter_count in range(restore_point, Max_iter + 1):
+    print(f'Iter {iter_count}', end='\r')
 
     i = iter_count % total_batch
     e = iter_count // total_batch
@@ -158,126 +172,126 @@ for iter_count in range(restore_point, Max_iter + 1):
         saver.save(sess, SaveName)
         print('SAVING MODEL Finish')
 
-        psnr_l = 0
-        psnr_g = 0
-        psnr_f = 0
-        ssim_m = 0
-        num_s = random.sample(range(num_test - batch_size), 10)
-        for isave in range(5):
-            mask_sizet = random.randint(64, 128)
+        # psnr_l = 0
+        # psnr_g = 0
+        # psnr_f = 0
+        # ssim_m = 0
+        # num_s = random.sample(range(num_test - batch_size), 10)
+        # for isave in range(5):
+        #     mask_sizet = random.randint(64, 128)
 
-            data_test = ri.MakeImageBlock(name_test, Height, Width, num_s[isave]//batch_size, batch_size)
-            data_tempt = 255.0 * ((data_test + 1) / 2.0)
-            mask_ts, xs, ys = op.make_sq_mask(Height, mask_sizet, batch_size)
-            mask_tf = op.ff_mask(Height, batch_size, 50, 20, 3.14, 6, 10)
+        #     data_test = ri.MakeImageBlock(name_test, Height, Width, num_s[isave]//batch_size, batch_size)
+        #     data_tempt = 255.0 * ((data_test + 1) / 2.0)
+        #     mask_ts, xs, ys = op.make_sq_mask(Height, mask_sizet, batch_size)
+        #     mask_tf = op.ff_mask(Height, batch_size, 50, 20, 3.14, 6, 10)
 
-            data_tempts = data_tempt * mask_ts
-            data_mts = (data_tempts / 255.0) * 2.0 - 1
+        #     data_tempts = data_tempt * mask_ts
+        #     data_mts = (data_tempts / 255.0) * 2.0 - 1
 
-            data_temptf = data_tempt * mask_tf
-            data_mtf = (data_temptf / 255.0) * 2.0 - 1
+        #     data_temptf = data_tempt * mask_tf
+        #     data_mtf = (data_temptf / 255.0) * 2.0 - 1
 
-            img_sample = sess.run(image_result, feed_dict={X: data_mts, Y: data_test, MASK: mask_ts})
-            img_sample2 = sess.run(image_result, feed_dict={X: data_mtf, Y: data_test, MASK: mask_tf})
+        #     img_sample = sess.run(image_result, feed_dict={X: data_mts, Y: data_test, MASK: mask_ts})
+        #     img_sample2 = sess.run(image_result, feed_dict={X: data_mtf, Y: data_test, MASK: mask_tf})
 
-            for kk in range(batch_size):
-                temp_img1 = img_sample[kk,:,:,:]
-                temp_img2 = data_test[kk,:,:,:]
-                temp_img3 = img_sample2[kk, :, :, :]
+        #     for kk in range(batch_size):
+        #         temp_img1 = img_sample[kk,:,:,:]
+        #         temp_img2 = data_test[kk,:,:,:]
+        #         temp_img3 = img_sample2[kk, :, :, :]
 
-                img_gt = 255.0 * ((temp_img2 + 1) / 2.0)
-                img_ge = 255.0 * ((temp_img1 + 1) / 2.0)
-                img_ge2 = 255.0 * ((temp_img3 + 1) / 2.0)
+        #         img_gt = 255.0 * ((temp_img2 + 1) / 2.0)
+        #         img_ge = 255.0 * ((temp_img1 + 1) / 2.0)
+        #         img_ge2 = 255.0 * ((temp_img3 + 1) / 2.0)
 
-                Bigpaper1 = np.zeros((Height, 3 * Width + 60, 3))
-                Bigpaper1[0:Height, 0:Width, :] = img_gt
-                Bigpaper1[0:Height, Width + 30: 2 * Width + 30, :] = data_tempts[kk,:,:,:]
-                Bigpaper1[0: Height, 2 * Width + 60: 3 * Width + 60, :] = img_ge
+        #         Bigpaper1 = np.zeros((Height, 3 * Width + 60, 3))
+        #         Bigpaper1[0:Height, 0:Width, :] = img_gt
+        #         Bigpaper1[0:Height, Width + 30: 2 * Width + 30, :] = data_tempts[kk,:,:,:]
+        #         Bigpaper1[0: Height, 2 * Width + 60: 3 * Width + 60, :] = img_ge
 
-                Bigpaper2 = np.zeros((Height, 3 * Width + 60, 3))
-                Bigpaper2[0:Height, 0:Width, :] = img_gt
-                Bigpaper2[0:Height, Width + 30: 2 * Width + 30, :] = data_temptf[kk, :, :, :]
-                Bigpaper2[0: Height, 2 * Width + 60: 3 * Width + 60, :] = img_ge2
+        #         Bigpaper2 = np.zeros((Height, 3 * Width + 60, 3))
+        #         Bigpaper2[0:Height, 0:Width, :] = img_gt
+        #         Bigpaper2[0:Height, Width + 30: 2 * Width + 30, :] = data_temptf[kk, :, :, :]
+        #         Bigpaper2[0: Height, 2 * Width + 60: 3 * Width + 60, :] = img_ge2
 
-                save_name = save_path + '/%04d' % iter_count
-                name = save_name + '/img_%02d_s.png' % (isave * batch_size + kk)
-                name2 = save_name + '/img_%02d_f.png' % (isave * batch_size + kk)
-                if not os.path.exists(save_name):
-                    os.makedirs(save_name)
-                sci.imsave(name, Bigpaper1)
-                sci.imsave(name2, Bigpaper2)
+        #         save_name = save_path + '/%04d' % iter_count
+        #         name = save_name + '/img_%02d_s.png' % (isave * batch_size + kk)
+        #         name2 = save_name + '/img_%02d_f.png' % (isave * batch_size + kk)
+        #         if not os.path.exists(save_name):
+        #             os.makedirs(save_name)
+        #         sci.imsave(name, Bigpaper1)
+        #         sci.imsave(name2, Bigpaper2)
 
-        for ipsnr in range(100):
-            mask_sizep = 128
+        # for ipsnr in range(100):
+        #     mask_sizep = 128
 
-            data_test = ri.MakeImageBlock(name_test, Height, Width, ipsnr, batch_size)
-            data_tempt = 255.0 * ((data_test + 1) / 2.0)
-            mask_t = ri.MakeImageBlock(name_tests, Height, Width, ipsnr, batch_size)
-            mask_t = (mask_t + 1) / 2
+        #     data_test = ri.MakeImageBlock(name_test, Height, Width, ipsnr, batch_size)
+        #     data_tempt = 255.0 * ((data_test + 1) / 2.0)
+        #     mask_t = ri.MakeImageBlock(name_tests, Height, Width, ipsnr, batch_size)
+        #     mask_t = (mask_t + 1) / 2
 
-            data_tempt = data_tempt * mask_t
-            data_mt = (data_tempt / 255.0) * 2.0 - 1
+        #     data_tempt = data_tempt * mask_t
+        #     data_mt = (data_tempt / 255.0) * 2.0 - 1
 
-            img_sample1, ssim_temp = sess.run([image_result, ssim], feed_dict={X: data_mt, Y: data_test, MASK: mask_t})
+        #     img_sample1, ssim_temp = sess.run([image_result, ssim], feed_dict={X: data_mt, Y: data_test, MASK: mask_t})
 
-            for kk in range(batch_size):
-                xx = int(xst[ipsnr * batch_size + kk])
-                yy = int(yst[ipsnr * batch_size + kk])
-                img_sample2 = img_sample1[:, xx:xx + mask_sizep, yy:yy + mask_sizep, :]
-                img_sample3 = data_test[:, xx:xx + mask_sizep, yy:yy + mask_sizep, :]
+        #     for kk in range(batch_size):
+        #         xx = int(xst[ipsnr * batch_size + kk])
+        #         yy = int(yst[ipsnr * batch_size + kk])
+        #         img_sample2 = img_sample1[:, xx:xx + mask_sizep, yy:yy + mask_sizep, :]
+        #         img_sample3 = data_test[:, xx:xx + mask_sizep, yy:yy + mask_sizep, :]
 
-                temp_img1 = img_sample1[kk,:,:,:]
-                temp_img2 = img_sample2[kk,:,:,:]
-                temp_img3 = data_test[kk,:,:,:]
-                temp_img4 = img_sample3[kk,:,:,:]
+        #         temp_img1 = img_sample1[kk,:,:,:]
+        #         temp_img2 = img_sample2[kk,:,:,:]
+        #         temp_img3 = data_test[kk,:,:,:]
+        #         temp_img4 = img_sample3[kk,:,:,:]
 
-                img_re = 255.0 * ((temp_img1 + 1) / 2.0)
-                img_rem = 255.0 * ((temp_img2 + 1) / 2.0)
-                img_gt = 255.0 * ((temp_img3 + 1) / 2.0)
-                img_gtm = 255.0 * ((temp_img4 + 1) / 2.0)
+        #         img_re = 255.0 * ((temp_img1 + 1) / 2.0)
+        #         img_rem = 255.0 * ((temp_img2 + 1) / 2.0)
+        #         img_gt = 255.0 * ((temp_img3 + 1) / 2.0)
+        #         img_gtm = 255.0 * ((temp_img4 + 1) / 2.0)
 
-                mse_l = np.mean(np.square(img_gtm - img_rem))
-                mse_g = np.mean(np.square(img_gt - img_re))
-                psnr_l += 10 * np.log10(255.0 * 255.0 / mse_l)
-                psnr_g += 10 * np.log10(255.0 * 255.0 / mse_g)
-            ssim_m += ssim_temp
+        #         mse_l = np.mean(np.square(img_gtm - img_rem))
+        #         mse_g = np.mean(np.square(img_gt - img_re))
+        #         psnr_l += 10 * np.log10(255.0 * 255.0 / mse_l)
+        #         psnr_g += 10 * np.log10(255.0 * 255.0 / mse_g)
+        #     ssim_m += ssim_temp
 
-        print('\nLocal = ', '%.4f' % (psnr_l/800),'\nGlobal = ', '%.4f\n' % (psnr_g/800), 'ssim = %.4f\n' % (ssim_m/100.0))
+        # print('\nLocal = ', '%.4f' % (psnr_l/800),'\nGlobal = ', '%.4f\n' % (psnr_g/800), 'ssim = %.4f\n' % (ssim_m/100.0))
 
-        pp = open(save_path + '/PSNR_log.txt', 'a+')
-        data = '--------------------' + '\n%d' % iter_count + '\nLocal = ' + '%.4f' % (psnr_l / 800) + '\nGlobal = ' + '%.4f\n' % (psnr_g / 800) + 'ssim = %.4f\n' % (ssim_m/100.0)
+        # pp = open(save_path + '/PSNR_log.txt', 'a+')
+        # data = '--------------------' + '\n%d' % iter_count + '\nLocal = ' + '%.4f' % (psnr_l / 800) + '\nGlobal = ' + '%.4f\n' % (psnr_g / 800) + 'ssim = %.4f\n' % (ssim_m/100.0)
 
-        pp.write(data)
-        pp.close()
+        # pp.write(data)
+        # pp.close()
 
-        for ipsnr in range(100):
+        # for ipsnr in range(100):
 
-            data_test = ri.MakeImageBlock(name_test, Height, Width, ipsnr, batch_size)
-            data_tempt = 255.0 * ((data_test + 1) / 2.0)
-            mask_t = ri.MakeImageBlock(name_testf, Height, Width, ipsnr, batch_size)
-            mask_t = (mask_t + 1) / 2
+        #     data_test = ri.MakeImageBlock(name_test, Height, Width, ipsnr, batch_size)
+        #     data_tempt = 255.0 * ((data_test + 1) / 2.0)
+        #     mask_t = ri.MakeImageBlock(name_testf, Height, Width, ipsnr, batch_size)
+        #     mask_t = (mask_t + 1) / 2
 
-            data_tempt = data_tempt * mask_t
-            data_mt = (data_tempt / 255.0) * 2.0 - 1
+        #     data_tempt = data_tempt * mask_t
+        #     data_mt = (data_tempt / 255.0) * 2.0 - 1
 
-            img_sample1, ssim_temp = sess.run([image_result, ssim], feed_dict={X: data_mt, Y: data_test, MASK: mask_t})
+        #     img_sample1, ssim_temp = sess.run([image_result, ssim], feed_dict={X: data_mt, Y: data_test, MASK: mask_t})
 
-            for kk in range(batch_size):
+        #     for kk in range(batch_size):
 
-                temp_img1 = img_sample1[kk,:,:,:]
-                temp_img3 = data_test[kk,:,:,:]
+        #         temp_img1 = img_sample1[kk,:,:,:]
+        #         temp_img3 = data_test[kk,:,:,:]
 
-                img_re = 255.0 * ((temp_img1 + 1) / 2.0)
-                img_gt = 255.0 * ((temp_img3 + 1) / 2.0)
+        #         img_re = 255.0 * ((temp_img1 + 1) / 2.0)
+        #         img_gt = 255.0 * ((temp_img3 + 1) / 2.0)
 
-                mse = np.mean(np.square(img_gt - img_re))
-                psnr_f += 10 * np.log10(255.0 * 255.0 / mse)
+        #         mse = np.mean(np.square(img_gt - img_re))
+        #         psnr_f += 10 * np.log10(255.0 * 255.0 / mse)
 
 
-        print('\nPSNR_f = ', '%.4f\n' % (psnr_f/800))
+        # print('\nPSNR_f = ', '%.4f\n' % (psnr_f/800))
 
-        pp = open(save_path + '/PSNR_log.txt', 'a+')
-        data = '\nPSNR_f = ' + '%.4f\n' % (psnr_f / 800)
+        # pp = open(save_path + '/PSNR_log.txt', 'a+')
+        # data = '\nPSNR_f = ' + '%.4f\n' % (psnr_f / 800)
 
-        pp.write(data)
-        pp.close()
+        # pp.write(data)
+        # pp.close()

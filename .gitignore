@@ -1,2 +1,11 @@
 
 \.idea/
+
+venv
+.mypy_cache
+
+CelebA
+dataset
+model
+__pycache__
+.DS_Store
