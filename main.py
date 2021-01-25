@@ -67,8 +67,8 @@ if __name__ == '__main__':
     save_path = './validation/v1'
     model_path = './model/v1'
 
-    restore = False
-    restore_point = 900000
+    restore = True
+    restore_point = 230  #900000
     Checkpoint = model_path + '/cVG iter ' + str(restore_point) + '/'
     WeightName = Checkpoint + 'Train_' + str(restore_point) + '.meta'
 
