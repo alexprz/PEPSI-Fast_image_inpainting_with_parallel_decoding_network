@@ -43,7 +43,10 @@ if __name__ == '__main__':
     name_f = load_celeba('train')
     num_f = len(name_f)
 
-    name_test = load_celeba('small-test')
+    # name_test = load_celeba('small-test')
+    name_test = load_celeba('faces_256')
+
+    name_test = [p for p in name_test if os.path.basename(p) == 'img.jpg']
     num_test = len(name_test)
 
     name_tests = load_celeba('masked')

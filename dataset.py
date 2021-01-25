@@ -22,7 +22,7 @@ from torchvision.datasets import ImageFolder
 
 
 def load_celeba(which):
-    assert which in ['train', 'test', 'small-test', 'masked']
+    assert which in ['train', 'test', 'small-test', 'masked', 'faces_256']
 
     imgfolder = ImageFolder(f'dataset/celeba/{which}')
     paths = [k[0] for k in imgfolder.imgs]
