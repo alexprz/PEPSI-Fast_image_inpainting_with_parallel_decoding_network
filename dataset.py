@@ -22,20 +22,15 @@ from torchvision.datasets import ImageFolder
 
 
 def load_celeba(which):
-    assert which in ['train', 'test']
+    assert which in ['train', 'test', 'small-test', 'masked']
 
-    if which == 'train':
-        train_imgfolder = ImageFolder('dataset/celeba/train')
-        train_paths = [k[0] for k in train_imgfolder.imgs]
+    imgfolder = ImageFolder(f'dataset/celeba/{which}')
+    paths = [k[0] for k in imgfolder.imgs]
 
-        return train_paths
-
-    if which == 'test':
-        test_imgfolder = ImageFolder('dataset/celeba/test')
-        test_paths = [k[0] for k in test_imgfolder.imgs]
-
-        return test_paths
+    return paths
 
 
 # paths = load_celeba('test')
 # print(len(paths))
+
+

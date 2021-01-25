@@ -1,8 +1,10 @@
 import numpy as np
 from scipy import misc
 import os
-import scipy.misc as sci
+# import scipy.misc as sci
 import random
+import imageio
+from PIL import Image
 
 
 def make_list(dPath):
@@ -72,31 +74,37 @@ def read_labeled_image_list2(image_list_file):
 def MakeImageBlock(Qfilenames, Height, Width, i, batch_size, resize=True):
 
     iCount = 0
-    Image = np.zeros((batch_size, Height, Width, 3))
+    img = np.zeros((batch_size, Height, Width, 3))
 
     #Query Image block
 
     for iL in range((i * batch_size), (i * batch_size) + batch_size):
 
-        Loadimage = misc.imread(Qfilenames[iL])
+        # Loadimage = misc.imread(Qfilenames[iL])
+        # Loadimage = imageio.imread(Qfilenames[iL])
+        Loadimage = Image.open(Qfilenames[iL])
 
         #if Gray make it colors
-        if Loadimage.ndim == 2:
-            Loadimage = np.expand_dims(Loadimage, 2)
-            Loadimage = np.tile(Loadimage, (1, 1, 3))
+        # if Loadimage.ndim == 2:
+        #     Loadimage = np.expand_dims(Loadimage, 2)
+        #     Loadimage = np.tile(Loadimage, (1, 1, 3))
 
-        if Loadimage.shape[2] is not 3:
-            Loadimage = Loadimage[:, :, 0:3]
+        # if Loadimage.shape[2] != 3:
+        #     Loadimage = Loadimage[:, :, 0:3]
 
         if resize:
-            Loadimage = misc.imresize(Loadimage, [Height, Width, 3])
+            # Loadimage = misc.imresize(Loadimage, [Height, Width, 3])
+            # print(type(Loadimage))
+            Loadimage = Loadimage.resize((Height, Width))
+            # Loadimage.show()
+            # exit()
 
-        Loadimage = Loadimage.astype(np.float32)
+        Loadimage = np.array(Loadimage).astype(np.float32)
 
         # Mean Value subtraction
         Loadimage = (Loadimage / 255.0 - 0.5) * 2
 
-        Image[iCount] = np.array(Loadimage, dtype=float)
+        img[iCount] = np.array(Loadimage, dtype=float)
         iCount = iCount + 1
 
-    return Image
+    return img
